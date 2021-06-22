@@ -195,7 +195,7 @@ TEST(analysis, example1_eof1)
     EXPECT_EQ(analysis.instrs[4].fn, op_tbl[OP_MSIZE].fn);
     EXPECT_EQ(analysis.instrs[5].fn, op_tbl[OP_PUSH1].fn);
     EXPECT_EQ(analysis.instrs[6].fn, op_tbl[OP_SSTORE].fn);
-    EXPECT_EQ(analysis.instrs[7].fn, op_tbl[OP_STOP].fn);
+    EXPECT_EQ(analysis.instrs[7].fn, op_tbl[OP_INVALID].fn);
 
     const auto& block = analysis.instrs[0].arg.block;
     EXPECT_EQ(block.gas_cost, 14u);

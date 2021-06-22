@@ -15,7 +15,8 @@ namespace evmone::baseline
 {
 namespace
 {
-CodeAnalysis analyze_jumpdests(const uint8_t* code, size_t code_begin, size_t code_end)
+CodeAnalysis analyze_jumpdests(
+    const uint8_t* code, size_t code_begin, size_t code_end, evmc_opcode final_opcode)
 {
     // To find if op is any PUSH opcode (OP_PUSH1 <= op <= OP_PUSH32)
     // it can be noticed that OP_PUSH32 is INT8_MAX (0x7f) therefore
@@ -36,10 +37,10 @@ CodeAnalysis analyze_jumpdests(const uint8_t* code, size_t code_begin, size_t co
 
     // i is the needed code size including the last push data (can be bigger than code_size).
     // Using "raw" new operator instead of std::make_unique() to get uninitialized array.
-    std::unique_ptr<uint8_t[]> padded_code{new uint8_t[i + 1]};  // +1 for the final STOP.
+    std::unique_ptr<uint8_t[]> padded_code{new uint8_t[i + 1]};  // +1 for the final STOP/INVALID.
     std::copy_n(code, code_end, padded_code.get());
-    // Set final STOP at the code end.
-    padded_code[i] = static_cast<uint8_t>(OP_STOP);
+    // Set final STOP/INVALID at the code end.
+    padded_code[i] = static_cast<uint8_t>(final_opcode);
 
     // TODO: Using fixed-size padding of 33, the padded code buffer and jumpdest bitmap can be
     //       created with single allocation.
@@ -50,12 +51,12 @@ CodeAnalysis analyze_jumpdests(const uint8_t* code, size_t code_begin, size_t co
 
 CodeAnalysis analyze_legacy(const uint8_t* code, size_t code_size)
 {
-    return analyze_jumpdests(code, 0, code_size);
+    return analyze_jumpdests(code, 0, code_size, OP_STOP);
 }
 
 CodeAnalysis analyze_eof1(const uint8_t* code, const EOF1Header& header)
 {
-    return analyze_jumpdests(code, header.code_begin(), header.code_end());
+    return analyze_jumpdests(code, header.code_begin(), header.code_end(), OP_INVALID);
 }
 }  // namespace
 
@@ -71,13 +72,13 @@ CodeAnalysis analyze(evmc_revision rev, const uint8_t* code, size_t code_size)
 namespace
 {
 const uint8_t* op_jump(ExecutionState& state, const CodeAnalysis::JumpdestMap& jumpdest_map,
-    const uint8_t* code, const uint8_t* code_end) noexcept
+    const uint8_t* code) noexcept
 {
     const auto dst = state.stack.pop();
     if (dst >= jumpdest_map.size() || !jumpdest_map[static_cast<size_t>(dst)])
     {
         state.status = EVMC_BAD_JUMP_DESTINATION;
-        return code_end;
+        return code;  // This value is ignored.
     }
 
     return code + static_cast<size_t>(dst);
@@ -405,14 +406,16 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
         }
 
         case OP_JUMP:
-            pc = op_jump(state, analysis.jumpdest_map, analysis.padded_code.get(),
-                analysis.padded_code.get() + analysis.code_end);
+            pc = op_jump(state, analysis.jumpdest_map, analysis.padded_code.get());
+            if (state.status == EVMC_BAD_JUMP_DESTINATION)
+                goto exit;
             continue;
         case OP_JUMPI:
             if (state.stack[1] != 0)
             {
-                pc = op_jump(state, analysis.jumpdest_map, analysis.padded_code.get(),
-                    analysis.padded_code.get() + analysis.code_end);
+                pc = op_jump(state, analysis.jumpdest_map, analysis.padded_code.get());
+                if (state.status == EVMC_BAD_JUMP_DESTINATION)
+                    goto exit;
             }
             else
             {

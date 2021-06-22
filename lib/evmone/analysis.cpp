@@ -171,7 +171,8 @@ AdvancedCodeAnalysis analyze(
 
     // Make sure the last block is terminated.
     // TODO: This is not needed if the last instruction is a terminating one.
-    analysis.instrs.emplace_back(op_tbl[OP_STOP].fn);
+    const bool is_legacy_code = (code_begin == 0);
+    analysis.instrs.emplace_back(op_tbl[is_legacy_code ? OP_STOP : OP_INVALID].fn);
 
     // FIXME: assert(analysis.instrs.size() <= max_instrs_size);
 
