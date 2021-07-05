@@ -223,6 +223,12 @@ inline bytecode rjump(int16_t offset)
            bytecode{bytes{static_cast<uint8_t>(offset >> 8), static_cast<uint8_t>(offset & 0xff)}};
 }
 
+inline bytecode rjumpi(int16_t offset, bytecode condition)
+{
+    return condition + OP_RJUMPI +
+           bytecode{bytes{static_cast<uint8_t>(offset >> 8), static_cast<uint8_t>(offset & 0xff)}};
+}
+
 inline bytecode ret(bytecode index, bytecode size)
 {
     return size + index + OP_RETURN;
