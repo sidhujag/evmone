@@ -27,6 +27,7 @@ struct EOF2Header
 
     size_t code_begin() const noexcept;
     size_t code_end() const noexcept;
+    size_t tables_begin() const noexcept;
 };
 
 // Checks if code starts with EOF FORMAT + MAGIC, doesn't validate the format.

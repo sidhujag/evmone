@@ -51,6 +51,11 @@ size_t EOF2Header::code_end() const noexcept
     return code_begin() + static_cast<size_t>(code_size);
 }
 
+size_t EOF2Header::tables_begin() const noexcept
+{
+    return code_end() + static_cast<size_t>(data_size);
+}
+
 bool is_eof_code(const uint8_t* code, size_t code_size) noexcept
 {
     static_assert(std::size(MAGIC) == 2);
