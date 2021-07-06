@@ -63,11 +63,13 @@ inline bytecode operator*(int n, evmc_opcode op)
     return n * bytecode{op};
 }
 
-inline bytecode eof1_header(uint16_t code_size, uint16_t data_size = 0)
+inline bytecode eof_header(uint8_t version, uint16_t code_size, uint16_t data_size)
 {
-    bytecode out{"efcafe0101"};
-    out += bytecode{
-        bytes{static_cast<uint8_t>(code_size >> 8), static_cast<uint8_t>(code_size & 0xff)}};
+    bytecode out{"efcafe"};
+    out += bytecode{bytes{version}};
+
+    out += "01" + bytecode{bytes{static_cast<uint8_t>(code_size >> 8),
+                      static_cast<uint8_t>(code_size & 0xff)}};
     if (data_size != 0)
     {
         out += "02" +
@@ -77,9 +79,25 @@ inline bytecode eof1_header(uint16_t code_size, uint16_t data_size = 0)
     return out;
 }
 
+inline bytecode eof1_header(uint16_t code_size, uint16_t data_size = 0)
+{
+    return eof_header(1, code_size, data_size);
+}
+
+inline bytecode eof2_header(uint16_t code_size, uint16_t data_size = 0)
+{
+    return eof_header(2, code_size, data_size);
+}
+
 inline bytecode eof1_bytecode(bytecode code, bytecode data = {})
 {
     return eof1_header(static_cast<uint16_t>(code.size()), static_cast<uint16_t>(data.size())) +
+           code + data;
+}
+
+inline bytecode eof2_bytecode(bytecode code, bytecode data = {})
+{
+    return eof2_header(static_cast<uint16_t>(code.size()), static_cast<uint16_t>(data.size())) +
            code + data;
 }
 
@@ -197,6 +215,12 @@ inline bytecode jump(bytecode target)
 inline bytecode jumpi(bytecode target, bytecode condition)
 {
     return condition + target + OP_JUMPI;
+}
+
+inline bytecode rjump(int16_t offset)
+{
+    return OP_RJUMP +
+           bytecode{bytes{static_cast<uint8_t>(offset >> 8), static_cast<uint8_t>(offset & 0xff)}};
 }
 
 inline bytecode ret(bytecode index, bytecode size)
