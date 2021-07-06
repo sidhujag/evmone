@@ -24,6 +24,7 @@ struct CodeAnalysis
     const JumpdestMap jumpdest_map;
     size_t code_begin = 0;
     size_t code_end = 0;
+    // TODO add tables
 };
 
 /// Analyze the code to build the bitmap of valid JUMPDEST locations.
