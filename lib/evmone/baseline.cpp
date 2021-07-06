@@ -110,6 +110,15 @@ const uint8_t* op_jump(ExecutionState& state, const CodeAnalysis::JumpdestMap& j
     return code + static_cast<size_t>(dst);
 }
 
+const uint8_t* op_rjump(const uint8_t* pc) noexcept
+{
+    // Reading next 2 bytes is guaranteed to be safe by deploy-time validation.
+    const auto offset_hi = *(pc + 1);
+    const auto offset_lo = *(pc + 2);
+    const auto offset = static_cast<int16_t>((offset_hi << 8) + offset_lo);
+    return pc + 3 + offset;  // PC_post_rjump + offset
+}
+
 template <size_t Len>
 inline const uint8_t* load_push(ExecutionState& state, const uint8_t* code) noexcept
 {
@@ -481,6 +490,21 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
             state.stack.push(state.gas_left);
             break;
         case OP_JUMPDEST:
+            break;
+        case OP_RJUMP:
+            pc = op_rjump(pc);
+            continue;
+        case OP_RJUMPI:
+            if (state.stack.pop() != 0)
+            {
+                pc = op_rjump(pc);
+                continue;
+            }
+            else
+            {
+                // skip immediate argument
+                pc += 2;
+            }
             break;
 
         case OP_PUSH1:
