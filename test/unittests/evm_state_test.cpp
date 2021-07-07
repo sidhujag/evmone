@@ -616,7 +616,7 @@ TEST_P(evm, sysblockhash)
     host.sysblock_hash.bytes[13] = 0x13;
 
     host.tx_context.block_number = 0;
-    auto code = "60004060005260206000f3";
+    auto code = "60004f60005260206000f3";
     execute(code);
     EXPECT_EQ(result.status_code, EVMC_SUCCESS);
     EXPECT_EQ(gas_used, 38);
