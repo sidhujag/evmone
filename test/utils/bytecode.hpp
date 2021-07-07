@@ -63,7 +63,8 @@ inline bytecode operator*(int n, evmc_opcode op)
     return n * bytecode{op};
 }
 
-inline bytecode eof_header(uint8_t version, uint16_t code_size, uint16_t data_size)
+inline bytecode eof_header(uint8_t version, uint16_t code_size, uint16_t data_size,
+    const std::vector<uint16_t>& table_sizes)
 {
     bytecode out{"efcafe"};
     out += bytecode{bytes{version}};
@@ -75,18 +76,24 @@ inline bytecode eof_header(uint8_t version, uint16_t code_size, uint16_t data_si
         out += "02" +
                bytes{static_cast<uint8_t>(data_size >> 8), static_cast<uint8_t>(data_size & 0xff)};
     }
+    for (const auto table_size : table_sizes)
+    {
+        out += "03" + bytes{static_cast<uint8_t>(table_size >> 8),
+                          static_cast<uint8_t>(table_size & 0xff)};
+    }
     out += "00";
     return out;
 }
 
 inline bytecode eof1_header(uint16_t code_size, uint16_t data_size = 0)
 {
-    return eof_header(1, code_size, data_size);
+    return eof_header(1, code_size, data_size, {});
 }
 
-inline bytecode eof2_header(uint16_t code_size, uint16_t data_size = 0)
+inline bytecode eof2_header(
+    uint16_t code_size, uint16_t data_size = 0, const std::vector<uint16_t>& table_sizes = {})
 {
-    return eof_header(2, code_size, data_size);
+    return eof_header(2, code_size, data_size, table_sizes);
 }
 
 inline bytecode eof1_bytecode(bytecode code, bytecode data = {})
@@ -95,10 +102,25 @@ inline bytecode eof1_bytecode(bytecode code, bytecode data = {})
            code + data;
 }
 
-inline bytecode eof2_bytecode(bytecode code, bytecode data = {})
+inline bytecode eof2_bytecode(
+    bytecode code, bytecode data = {}, std::vector<std::vector<int16_t>> tables = {})
 {
-    return eof2_header(static_cast<uint16_t>(code.size()), static_cast<uint16_t>(data.size())) +
-           code + data;
+    std::vector<uint16_t> table_sizes;
+    table_sizes.reserve(tables.size());
+    bytes tables_encoded;
+    for (const auto& table : tables)
+    {
+        table_sizes.push_back(static_cast<uint16_t>(table.size()));
+        for (const auto offset : table)
+        {
+            tables_encoded += static_cast<uint8_t>(offset >> 8);
+            tables_encoded += static_cast<uint8_t>(offset & 0xff);
+        }
+    }
+
+    return eof2_header(static_cast<uint16_t>(code.size()), static_cast<uint16_t>(data.size()),
+               table_sizes) +
+           code + data + bytecode{tables_encoded};
 }
 
 inline bytecode push(bytes_view data)
@@ -227,6 +249,13 @@ inline bytecode rjumpi(int16_t offset, bytecode condition)
 {
     return condition + OP_RJUMPI +
            bytecode{bytes{static_cast<uint8_t>(offset >> 8), static_cast<uint8_t>(offset & 0xff)}};
+}
+
+inline bytecode rjumptable(uint16_t table_index, bytecode index)
+{
+    return index + OP_RJUMPTABLE +
+           bytecode{bytes{
+               static_cast<uint8_t>(table_index >> 8), static_cast<uint8_t>(table_index & 0xff)}};
 }
 
 inline bytecode ret(bytecode index, bytecode size)
