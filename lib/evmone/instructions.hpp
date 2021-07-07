@@ -549,6 +549,19 @@ inline evmc_status_code blockhash(ExecutionState& state) noexcept
     return EVMC_SUCCESS;
 }
 
+inline evmc_status_code sysblockhash(ExecutionState& state) noexcept
+{
+    auto& number = state.stack.top();
+
+    const auto upper_bound = state.host.get_tx_context().block_number;
+    const auto lower_bound = std::max(upper_bound - 50000, decltype(upper_bound){0});
+    const auto n = static_cast<int64_t>(number);
+    const auto header =
+        (number < upper_bound && n >= lower_bound) ? state.host.read_sys_hash(n) : evmc::bytes32{};
+    number = intx::be::load<uint256>(header);
+    return EVMC_SUCCESS;
+}
+
 inline evmc_status_code coinbase(ExecutionState& state) noexcept
 {
     state.stack.push(intx::be::load<uint256>(state.host.get_tx_context().block_coinbase));

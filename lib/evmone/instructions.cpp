@@ -222,6 +222,7 @@ constexpr std::array<instruction_exec_fn, 256> instruction_implementations = [](
     table[OP_RETURNDATACOPY] = op<returndatacopy>;
     table[OP_EXTCODEHASH] = op<extcodehash>;
     table[OP_BLOCKHASH] = op<blockhash>;
+    table[OP_SYSBLOCKHASH] = op<sysblockhash>;
     table[OP_COINBASE] = op<coinbase>;
     table[OP_TIMESTAMP] = op<timestamp>;
     table[OP_NUMBER] = op<number>;

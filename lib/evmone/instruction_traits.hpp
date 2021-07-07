@@ -74,6 +74,7 @@ constexpr inline GasCostTable gas_costs = []() noexcept {
     table[EVMC_FRONTIER][OP_EXTCODESIZE] = 20;
     table[EVMC_FRONTIER][OP_EXTCODECOPY] = 20;
     table[EVMC_FRONTIER][OP_BLOCKHASH] = 20;
+    table[EVMC_FRONTIER][OP_SYSBLOCKHASH] = 20;
     table[EVMC_FRONTIER][OP_COINBASE] = 2;
     table[EVMC_FRONTIER][OP_TIMESTAMP] = 2;
     table[EVMC_FRONTIER][OP_NUMBER] = 2;
@@ -230,6 +231,7 @@ constexpr inline std::array<Traits, 256> traits = []() noexcept {
     table[OP_EXTCODEHASH] = {"EXTCODEHASH", 1, 0};
 
     table[OP_BLOCKHASH] = {"BLOCKHASH", 1, 0};
+    table[OP_SYSBLOCKHASH] = {"SYSBLOCKHASH", 1, 0};
     table[OP_COINBASE] = {"COINBASE", 0, 1};
     table[OP_TIMESTAMP] = {"TIMESTAMP", 0, 1};
     table[OP_NUMBER] = {"NUMBER", 0, 1};

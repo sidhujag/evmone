@@ -321,6 +321,9 @@ evmc_result execute(const VM& vm, ExecutionState& state, const CodeAnalysis& ana
         case OP_BLOCKHASH:
             blockhash(state);
             break;
+        case OP_SYSBLOCKHASH:
+            sysblockhash(state);
+            break;
         case OP_COINBASE:
             coinbase(state);
             break;

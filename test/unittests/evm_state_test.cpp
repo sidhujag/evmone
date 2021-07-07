@@ -611,6 +611,37 @@ TEST_P(evm, blockhash)
     EXPECT_EQ(host.recorded_blockhashes.back(), 0);
 }
 
+TEST_P(evm, sysblockhash)
+{
+    host.sysblock_hash.bytes[13] = 0x13;
+
+    host.tx_context.block_number = 0;
+    auto code = "60004060005260206000f3";
+    execute(code);
+    EXPECT_EQ(result.status_code, EVMC_SUCCESS);
+    EXPECT_EQ(gas_used, 38);
+    ASSERT_EQ(result.output_size, 32);
+    EXPECT_EQ(result.output_data[13], 0);
+    EXPECT_EQ(host.recorded_sysblockhashes.size(), 0);
+
+    host.tx_context.block_number = 50001;
+    execute(code);
+    EXPECT_EQ(result.status_code, EVMC_SUCCESS);
+    EXPECT_EQ(gas_used, 38);
+    ASSERT_EQ(result.output_size, 32);
+    EXPECT_EQ(result.output_data[13], 0);
+    EXPECT_EQ(host.recorded_sysblockhashes.size(), 0);
+
+    host.tx_context.block_number = 50000;
+    execute(code);
+    EXPECT_EQ(result.status_code, EVMC_SUCCESS);
+    EXPECT_EQ(gas_used, 38);
+    ASSERT_EQ(result.output_size, 32);
+    EXPECT_EQ(result.output_data[13], 0x13);
+    ASSERT_EQ(host.recorded_sysblockhashes.size(), 1);
+    EXPECT_EQ(host.recorded_sysblockhashes.back(), 0);
+}
+
 TEST_P(evm, extcode)
 {
     auto addr = evmc_address{};
